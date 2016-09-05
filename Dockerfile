@@ -34,16 +34,18 @@ run mv /opt/gitblit/data/* /opt/gitblit-data
 # Note: we are writing to a different file here because sed doesn't like to the same file it
 # is streaming.  This is why the original properties file was renamed earlier.
 
-run echo "server.httpPort=80" >> /opt/gitblit-data/gitblit.properties
-run echo "server.httpsPort=443" >> /opt/gitblit-data/gitblit.properties
-run echo "server.redirectToHttpsPort=true" >> /opt/gitblit-data/gitblit.properties
+run echo "server.httpPort=50101" >> /opt/gitblit-data/gitblit.properties
+run echo "server.httpsPort=50102" >> /opt/gitblit-data/gitblit.properties
+run echo "server.redirectToHttpsPort=false" >> /opt/gitblit-data/gitblit.properties
 run echo "web.enableRpcManagement=true" >> /opt/gitblit-data/gitblit.properties
 run echo "web.enableRpcAdministration=true" >> /opt/gitblit-data/gitblit.properties
 
 # Setup the Docker container environment and run Gitblit
 workdir /opt/gitblit
-expose 80
-expose 443
+volume /opt/gitblit-data
+expose 50101
+expose 50102
 expose 9418
 expose 29418
+
 cmd ["java", "-server", "-Xmx1024M", "-Djava.awt.headless=true", "-jar", "/opt/gitblit/gitblit.jar", "--baseFolder", "/opt/gitblit-data"]
