@@ -25,12 +25,8 @@ run rm -rf /opt/gitblit-tmp
 run rm -f /root/gitblit.tar.gz
 
 # Move the data files to a separate directory
-run mkdir -p /opt/gitblit-data
+run mv /opt/gitblit/data /opt/gitblit-data
 
-run mv /opt/gitblit/data/* /opt/gitblit-data
-
-# Adjust the default Gitblit settings to bind to 80, 443, 9418, 29418, and allow RPC administration.
-#
 # Note: we are writing to a different file here because sed doesn't like to the same file it
 # is streaming.  This is why the original properties file was renamed earlier.
 
@@ -41,8 +37,8 @@ run echo "web.enableRpcManagement=true" >> /opt/gitblit-data/gitblit.properties
 run echo "web.enableRpcAdministration=true" >> /opt/gitblit-data/gitblit.properties
 
 # Setup the Docker container environment and run Gitblit
-workdir /opt/gitblit
-volume /opt/gitblit-data
+WORKDIR /opt/gitblit
+VOLUME /opt/gitblit-data
 expose 50101
 expose 50102
 expose 9418
