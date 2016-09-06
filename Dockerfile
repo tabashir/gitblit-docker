@@ -1,47 +1,34 @@
 # Basics
 #
-from ubuntu:latest
-maintainer James Moger <james.moger@gitblit.com>
-run apt-get update
-run apt-get install -q -y git-core redis-server
-
-# Install Java 7
-
-run DEBIAN_FRONTEND=noninteractive apt-get install -q -y software-properties-common
-run DEBIAN_FRONTEND=noninteractive apt-get install -q -y python-software-properties
-run DEBIAN_FRONTEND=noninteractive apt-add-repository ppa:webupd8team/java -y
-run apt-get update
-run echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
-run DEBIAN_FRONTEND=noninteractive apt-get install oracle-java7-installer -y
+FROM openjdk:7-jdk
+MAINTAINER Jez McKinley <docker.jez@mckinley.biz>
+RUN apt-get update && apt-get install -q -y git-core redis-server
 
 # Install Gitblit
 
-run apt-get install -q -y curl
-run curl -Lks http://dl.bintray.com/gitblit/releases/gitblit-1.7.0.tar.gz -o /root/gitblit.tar.gz
-run mkdir -p /opt/gitblit-tmp
-run tar zxf /root/gitblit.tar.gz -C /opt/gitblit-tmp
-run mv /opt/gitblit-tmp/gitblit-1.7.0 /opt/gitblit
-run rm -rf /opt/gitblit-tmp
-run rm -f /root/gitblit.tar.gz
+ENV GITBLIT_VERSION gitblit-1.8.0
+ENV GITBLIT_TARBALL $GITBLIT_VERSION.tar.gz
 
-# Move the data files to a separate directory
-run mv /opt/gitblit/data /opt/gitblit-data
+ADD http://dl.bintray.com/gitblit/releases/$GITBLIT_TARBALL /opt
 
-# Note: we are writing to a different file here because sed doesn't like to the same file it
-# is streaming.  This is why the original properties file was renamed earlier.
+RUN tar xvf /opt/$GITBLIT_TARBALL -C /opt && \
+rm -f /opt/$GITBLIT_TARBALL && \
+ln -s /opt/$GITBLIT_VERSION /opt/gitblit && \
+ln -s  /opt/gitblit/data/git /opt/repos
 
-run echo "server.httpPort=50101" >> /opt/gitblit-data/gitblit.properties
-run echo "server.httpsPort=50102" >> /opt/gitblit-data/gitblit.properties
-run echo "server.redirectToHttpsPort=false" >> /opt/gitblit-data/gitblit.properties
-run echo "web.enableRpcManagement=true" >> /opt/gitblit-data/gitblit.properties
-run echo "web.enableRpcAdministration=true" >> /opt/gitblit-data/gitblit.properties
+ADD gitblit.properties /opt/gitblit/data
 
 # Setup the Docker container environment and run Gitblit
 WORKDIR /opt/gitblit
-VOLUME /opt/gitblit-data
-expose 50101
-expose 50102
-expose 9418
-expose 29418
+VOLUME /opt/repos
 
-cmd ["java", "-server", "-Xmx1024M", "-Djava.awt.headless=true", "-jar", "/opt/gitblit/gitblit.jar", "--baseFolder", "/opt/gitblit-data"]
+# BASE ports
+EXPOSE 50101
+EXPOSE 9418
+EXPOSE 29418
+
+# HTTPS port
+#EXPOSE 50102
+
+
+cmd ["java", "-server", "-Xmx1024M", "-Djava.awt.headless=true", "-jar", "/opt/gitblit/gitblit.jar", "--baseFolder", "/opt/gitblit/data"]
